@@ -4,9 +4,11 @@ import {
   HideField,
   Field,
 } from '@nestjs/graphql';
-import { Post } from 'src/posts/models/post.model';
-import { BaseModel } from 'src/common/models/base.model';
+import { Post } from 'posts/models/post.model';
+import { BaseModel } from 'common/models/base.model';
 import { Role } from '@prisma/client';
+import { Booking } from 'bookings/models/booking.model';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 registerEnumType(Role, {
   name: 'Role',
@@ -15,12 +17,30 @@ registerEnumType(Role, {
 
 @ObjectType()
 export class User extends BaseModel {
+  @ApiProperty({ readOnly: true })
   email: string;
+
+  @ApiProperty({ readOnly: true, nullable: true })
   firstname?: string;
+
+  @ApiProperty({ readOnly: true, nullable: true })
   lastname?: string;
+
+  @ApiProperty({ readOnly: true, enum: Role })
   @Field(() => Role)
   role: Role;
-  posts: Post[];
+
+  @ApiProperty({ readOnly: true, type: () => [Post], required: false })
+  posts?: Post[];
+
+  @ApiProperty({ readOnly: true, type: () => [Booking], required: false })
+  bookings?: Booking[];
+
   @HideField()
   password: string;
 }
+
+export class UserWithoutRelations extends OmitType(User, [
+  'bookings',
+  'posts',
+]) {}

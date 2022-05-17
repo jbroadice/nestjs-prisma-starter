@@ -1,8 +1,15 @@
 import { PrismaService } from 'nestjs-prisma';
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PasswordService } from 'src/auth/password.service';
+import { PasswordService } from 'auth/password.service';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { PaginationQueryDto } from 'common/pagination/pagination-query.dto';
+import { UserWithoutRelations } from './models/user.model';
+import {
+  makePaginatedResponse,
+  PrismaDelegateRejectSettings,
+} from 'common/pagination/paginated-dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +18,22 @@ export class UsersService {
     private passwordService: PasswordService
   ) {}
 
+  /**
+   * Find all users.
+   */
+  findAll(paginationQuery: PaginationQueryDto) {
+    return makePaginatedResponse<
+      UserWithoutRelations,
+      Prisma.UserDelegate<PrismaDelegateRejectSettings>
+    >({
+      paginationQuery,
+      modelDelegate: this.prisma.user,
+    });
+  }
+
+  /**
+   * Update user.
+   */
   updateUser(userId: string, newUserData: UpdateUserInput) {
     return this.prisma.user.update({
       data: newUserData,
@@ -20,6 +43,9 @@ export class UsersService {
     });
   }
 
+  /**
+   * Change a user's password.
+   */
   async changePassword(
     userId: string,
     userPassword: string,

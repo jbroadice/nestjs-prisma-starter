@@ -7,11 +7,13 @@ Table User {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   email String [unique, not null]
+  role Role [not null]
   password String [not null]
   firstname String
   lastname String
   posts Post [not null]
-  role Role [not null]
+  bookings ParticipantsOnBookings [not null]
+  assignedParticipantsOnBookings ParticipantsOnBookings [not null]
 }
 
 Table Post {
@@ -25,9 +27,50 @@ Table Post {
   authorId String
 }
 
+Table Booking {
+  id String [pk]
+  active Boolean [default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  timeStart DateTime [not null]
+  timeEnd DateTime [not null]
+  title String
+  description String
+  participants ParticipantsOnBookings [not null]
+}
+
+Table ParticipantsOnBookings {
+  participant User [not null]
+  participantId String [not null]
+  participantRole ParticipantRole [not null]
+  booking Booking [not null]
+  bookingId String [not null]
+  assignedAt DateTime [default: `now()`, not null]
+  assignedBy User
+  assignedById String
+
+  indexes {
+    (participantId, bookingId) [pk]
+  }
+}
+
 Enum Role {
   ADMIN
-  USER
+  TRAINER
+  CLIENT
+}
+
+Enum ParticipantRole {
+  ORGANISER
+  TRAINER
+  CLIENT
+  GUEST
 }
 
 Ref: Post.authorId > User.id
+
+Ref: ParticipantsOnBookings.participantId > User.id
+
+Ref: ParticipantsOnBookings.bookingId > Booking.id
+
+Ref: ParticipantsOnBookings.assignedById > User.id

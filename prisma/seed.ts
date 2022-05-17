@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
+import { hash } from 'bcrypt';
+import { Chance } from 'chance';
 
 const prisma = new PrismaClient();
 
@@ -8,47 +10,45 @@ async function main() {
 
   console.log('Seeding...');
 
-  const user1 = await prisma.user.create({
-    data: {
-      email: 'lisa@simpson.com',
-      firstname: 'Lisa',
-      lastname: 'Simpson',
-      password: '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', // secret42
-      role: 'USER',
-      posts: {
-        create: {
-          title: 'Join us for Prisma Day 2019 in Berlin',
-          content: 'https://www.prisma.io/day/',
-          published: true,
+  const chance = new Chance();
+
+  new Array(100).fill(null).forEach(async () => {
+    const email = chance.email();
+    const firstname = chance.first();
+    await prisma.user.create({
+      data: {
+        email,
+        password: await hash('wibble100', 10),
+        role: chance.pickone(Object.keys(Role)) as Role,
+        firstname,
+        lastname: chance.last(),
+        posts: {
+          create: [
+            {
+              title: `A post from ${firstname}`,
+              published: true,
+            },
+          ],
+        },
+        bookings: {
+          create: [
+            {
+              participantRole: 'ORGANISER',
+              assignedBy: { connect: { email } },
+              booking: {
+                create: {
+                  title: `A booking from ${firstname}`,
+                  description: 'Fun description here',
+                  timeStart: new Date(),
+                  timeEnd: new Date(),
+                },
+              },
+            },
+          ],
         },
       },
-    },
+    });
   });
-  const user2 = await prisma.user.create({
-    data: {
-      email: 'bart@simpson.com',
-      firstname: 'Bart',
-      lastname: 'Simpson',
-      role: 'ADMIN',
-      password: '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', // secret42
-      posts: {
-        create: [
-          {
-            title: 'Subscribe to GraphQL Weekly for community news',
-            content: 'https://graphqlweekly.com/',
-            published: true,
-          },
-          {
-            title: 'Follow Prisma on Twitter',
-            content: 'https://twitter.com/prisma',
-            published: false,
-          },
-        ],
-      },
-    },
-  });
-
-  console.log({ user1, user2 });
 }
 
 main()

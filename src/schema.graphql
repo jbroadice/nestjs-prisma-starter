@@ -11,6 +11,22 @@ type Auth {
   user: User!
 }
 
+type Booking {
+  active: Boolean!
+
+  """Identifies the date and time when the object was created."""
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  participants: [User!]!
+  timeEnd: DateTime!
+  timeStart: DateTime!
+  title: String!
+
+  """Identifies the date and time when the object was last updated."""
+  updatedAt: DateTime!
+}
+
 input ChangePasswordInput {
   newPassword: String!
   oldPassword: String!
@@ -18,6 +34,13 @@ input ChangePasswordInput {
 
 input CreatePostInput {
   content: String!
+  title: String!
+}
+
+input CreateSessionInput {
+  description: String
+  timeEnd: DateTime!
+  timeStart: DateTime!
   title: String!
 }
 
@@ -38,6 +61,7 @@ input LoginInput {
 
 type Mutation {
   changePassword(data: ChangePasswordInput!): User!
+  createBooking(data: CreateSessionInput!): Booking!
   createPost(data: CreatePostInput!): Post!
   login(data: LoginInput!): Auth!
   refreshToken(token: JWT!): Token!
@@ -101,8 +125,6 @@ enum PostOrderField {
 }
 
 type Query {
-  hello(name: String!): String!
-  helloWorld: String!
   me: User!
   post(postId: String!): Post!
   publishedPosts(after: String, before: String, first: Int, last: Int, orderBy: PostOrder, query: String, skip: Int): PostConnection!
@@ -112,7 +134,8 @@ type Query {
 """User role"""
 enum Role {
   ADMIN
-  USER
+  CLIENT
+  TRAINER
 }
 
 input SignupInput {
@@ -140,13 +163,16 @@ input UpdateUserInput {
 }
 
 type User {
+  bookings: [Booking!]
+
   """Identifies the date and time when the object was created."""
   createdAt: DateTime!
   email: String!
   firstname: String
+  fullname: String!
   id: ID!
   lastname: String
-  posts: [Post!]!
+  posts: [Post!]
   role: Role!
 
   """Identifies the date and time when the object was last updated."""

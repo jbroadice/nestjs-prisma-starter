@@ -13,15 +13,17 @@ generator dbml {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  email     String   @unique
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  email     String    @unique
+  role      Role
   password  String
   firstname String?
   lastname  String?
   posts     Post[]
-  role      Role
+  bookings  ParticipantsOnBookings[] @relation("partcipantOnBooking")
+  assignedParticipantsOnBookings ParticipantsOnBookings[] @relation("assignedParticipantOnBooking")
 }
 
 model Post {
@@ -35,7 +37,40 @@ model Post {
   authorId  String?
 }
 
+model Booking {
+  id           String   @id @default(cuid())
+  active       Boolean? @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  timeStart    DateTime
+  timeEnd      DateTime
+  title        String?
+  description  String?
+  participants ParticipantsOnBookings[]
+}
+
+model ParticipantsOnBookings {
+  participant     User     @relation(name: "partcipantOnBooking", fields: [participantId], references: [id])
+  participantId   String
+  participantRole ParticipantRole
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  bookingId       String
+  assignedAt      DateTime @default(now())
+  assignedBy      User?    @relation(name: "assignedParticipantOnBooking", fields: [assignedById], references: [id])
+  assignedById    String?
+
+  @@id([participantId, bookingId])
+}
+
 enum Role {
   ADMIN
-  USER
+  TRAINER
+  CLIENT
+}
+
+enum ParticipantRole {
+  ORGANISER
+  TRAINER
+  CLIENT
+  GUEST
 }

@@ -1,17 +1,17 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
+  @Get('/')
+  @ApiOperation({ summary: 'A test Hello world' })
+  @ApiOkResponse({
+    schema: { example: 'Hello, world!' },
+  })
   getHello(): string {
     return this.appService.getHello();
-  }
-
-  @Get('hello/:name')
-  getHelloName(@Param('name') name: string): string {
-    return this.appService.getHelloName(name);
   }
 }

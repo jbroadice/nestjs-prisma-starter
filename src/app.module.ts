@@ -13,6 +13,7 @@ import { loggingMiddleware } from 'common/middleware/logging.middleware';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GqlConfigService } from './gql-config.service';
 import { BookingsModule } from './bookings/bookings.module';
+import { PaginationService } from 'common/pagination/pagination.service';
 
 @Module({
   imports: [
@@ -35,6 +36,6 @@ import { BookingsModule } from './bookings/bookings.module';
     BookingsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppResolver],
+  providers: [AppService, AppResolver, PaginationService],
 })
 export class AppModule {}

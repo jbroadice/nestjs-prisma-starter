@@ -8,6 +8,7 @@ import {
   Query,
   Delete,
   NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
@@ -28,6 +29,7 @@ import { BookingParticipantsCreatedOutput } from './dto/booking-participants-cre
 import { ApiPaginatedResponse } from 'common/pagination/api-paginated-response.decorator';
 import { JWTGuard } from 'auth/jwt-guard.decorator';
 import { BookingsFiltersPaginatedDto } from './dto/bookings-filters.dto';
+import { UpdateBookingInput } from './dto/update-booking.input';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -42,23 +44,19 @@ export class BookingsController {
   @ApiOperation({ summary: 'Get all bookings' })
   @ApiQuery({
     name: 'participants',
-    description: 'Filter by list of participant ids',
-    required: false,
     style: 'simple',
-  })
-  @ApiQuery({
-    name: 'active',
-    description: 'Filter by active',
     required: false,
   })
   @ApiPaginatedResponse(Booking)
   bookings(
-    @Query() { participants, active, skip, take }: BookingsFiltersPaginatedDto
+    @Query()
+    { participants, active, date, skip, take }: BookingsFiltersPaginatedDto
   ) {
     return this.bookingsService.findFiltered(
       {
         participants,
         active,
+        date,
       },
       { skip, take }
     );
@@ -94,6 +92,23 @@ export class BookingsController {
       throw new NotFoundException(`Booking with id ${id} not found`);
     }
     return booking;
+  }
+
+  /**
+   * Update a booking.
+   */
+  @Patch('booking/:id')
+  @ApiOperation({ summary: 'Update a booking' })
+  @ApiParam({
+    name: 'id',
+    description: 'The id of the booking',
+    example: 'cl37ynt5m0017s2ec6tmdfqo0',
+  })
+  @ApiOkResponse({ type: Booking })
+  @ApiNotFoundResponse()
+  @ApiUnprocessableEntityResponse()
+  updateBooking(@Param('id') id: string, @Body() booking: UpdateBookingInput) {
+    return this.bookingsService.updateBooking(id, booking);
   }
 
   /**

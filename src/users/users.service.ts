@@ -1,40 +1,65 @@
 import { PrismaService } from 'nestjs-prisma';
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Scope,
+  Inject,
+  Request,
+} from '@nestjs/common';
 import { PasswordService } from 'auth/password.service';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { PaginationQueryDto } from 'common/pagination/pagination-query.dto';
 import { UserWithoutRelations } from './models/user.model';
-import {
-  makePaginatedResponse,
-  PrismaDelegateRejectSettings,
-} from 'common/pagination/paginated-dto';
 import { Prisma } from '@prisma/client';
+import { UsersFiltersDto } from './dto/users-filters.dto';
+import {
+  PaginationService,
+  PrismaDelegateRejectSettings,
+} from 'common/pagination/pagination.service';
+import { REQUEST } from '@nestjs/core';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class UsersService {
   constructor(
-    private prisma: PrismaService,
-    private passwordService: PasswordService
+    @Inject(REQUEST) private readonly request: Request,
+    private readonly prisma: PrismaService,
+    private readonly passwordService: PasswordService,
+    private readonly paginationService: PaginationService
   ) {}
 
   /**
    * Find all users.
    */
-  findAll(paginationQuery: PaginationQueryDto) {
-    return makePaginatedResponse<
+  findAll({ emails }: UsersFiltersDto, paginationQuery: PaginationQueryDto) {
+    return this.paginationService.makePaginatedResponse<
       UserWithoutRelations,
-      Prisma.UserDelegate<PrismaDelegateRejectSettings>
+      Prisma.UserDelegate<PrismaDelegateRejectSettings>,
+      Prisma.UserWhereInput
     >({
       paginationQuery,
       modelDelegate: this.prisma.user,
+      where: { email: { in: emails } },
     });
+  }
+
+  /**
+   * Find users by email address.
+   */
+  findByEmails(emails: string[]) {
+    return this.prisma.user.findMany({ where: { email: { in: emails } } });
   }
 
   /**
    * Update user.
    */
   updateUser(userId: string, newUserData: UpdateUserInput) {
+    const ctxUser: UserWithoutRelations = (this.request as any).user;
+
+    if (ctxUser.role !== 'ADMIN' && ctxUser.id !== userId) {
+      throw new BadRequestException('You are not allowed to update this user');
+    }
+
     return this.prisma.user.update({
       data: newUserData,
       where: {

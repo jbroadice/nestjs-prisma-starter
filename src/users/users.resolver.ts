@@ -13,10 +13,10 @@ import { JWTAuthGuard } from 'auth/auth.guard';
 import { UsersService } from './users.service';
 import { User } from './models/user.model';
 import { ChangePasswordInput } from './dto/change-password.input';
-import { UpdateUserInput } from './dto/update-user.input';
 import { Booking } from 'bookings/models/booking.model';
 import { CreateBookingInput } from 'bookings/dto/create-booking.input';
 import { BookingsService } from 'bookings/bookings.service';
+import { CreateUserInput } from './dto/create-user.input';
 
 @Resolver(() => User)
 @UseGuards(JWTAuthGuard)
@@ -41,7 +41,7 @@ export class UsersResolver {
   @Mutation(() => User)
   async updateUser(
     @UserEntity() user: User,
-    @Args('data') newUserData: UpdateUserInput
+    @Args('data') newUserData: CreateUserInput
   ) {
     return this.usersService.updateUser(user.id, newUserData);
   }

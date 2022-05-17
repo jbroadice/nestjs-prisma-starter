@@ -6,24 +6,19 @@ import {
 } from '@nestjs/common';
 import { Booking, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import {
-  makePaginatedResponse,
-  PrismaDelegateRejectSettings,
-} from 'common/pagination/paginated-dto';
 import { PaginationQueryDto } from 'common/pagination/pagination-query.dto';
+import {
+  PaginationService,
+  PrismaDelegateRejectSettings,
+} from 'common/pagination/pagination.service';
+import { getDateRangeFromDate } from 'common/utils/date.utils';
 import { uniqWith } from 'lodash';
 import { PrismaService } from 'nestjs-prisma';
 import { BookingParticipantInput } from './dto/booking-participant.input';
 import { BookingParticipantsCreatedOutput } from './dto/booking-participants-created.output';
+import { BookingsFiltersDto } from './dto/bookings-filters.dto';
 import { CreateBookingInput } from './dto/create-booking.input';
-
-export interface IBookingsFilters {
-  /**
-   * List of participant ids.
-   */
-  participants?: string[];
-  active?: boolean;
-}
+import { UpdateBookingInput } from './dto/update-booking.input';
 
 const INCLUDED_RELATIONS = {
   participants: { include: { participant: true, assignedBy: true } },
@@ -31,16 +26,38 @@ const INCLUDED_RELATIONS = {
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paginationService: PaginationService
+  ) {}
 
   /**
    * Find all bookings.
    */
   findFiltered(
-    { participants, active }: IBookingsFilters,
+    { participants, active, date }: BookingsFiltersDto,
     paginationQuery: PaginationQueryDto
   ) {
-    return makePaginatedResponse<
+    const whereGetter = () => {
+      const where: Prisma.BookingWhereInput = {};
+      if (participants !== undefined) {
+        where.participants = {
+          some: {
+            participant: { id: { in: participants } },
+          },
+        };
+      }
+      if (active !== undefined) {
+        where.active = active;
+      }
+      if (date !== undefined) {
+        const { start, end } = getDateRangeFromDate(date);
+        where.timeStart = { gte: start };
+        where.timeEnd = { lte: end };
+      }
+      return where;
+    };
+    return this.paginationService.makePaginatedResponse<
       Booking,
       Prisma.BookingDelegate<PrismaDelegateRejectSettings>,
       Prisma.BookingWhereInput,
@@ -48,21 +65,8 @@ export class BookingsService {
     >({
       paginationQuery,
       modelDelegate: this.prisma.booking,
-      whereGetter: () => {
-        const where: Prisma.BookingWhereInput = {};
-        if (participants !== undefined) {
-          where.participants = {
-            some: {
-              participant: { id: { in: participants } },
-            },
-          };
-        }
-        if (active !== undefined) {
-          where.active = active;
-        }
-        return where;
-      },
-      argsGetter: () => ({ include: INCLUDED_RELATIONS }),
+      where: whereGetter(),
+      args: { include: INCLUDED_RELATIONS },
     });
   }
 
@@ -103,6 +107,18 @@ export class BookingsService {
     });
 
     return this.findOneById(create.booking.id);
+  }
+
+  /**
+   * Update a booking.
+   */
+  async updateBooking(id: string, data: UpdateBookingInput): Promise<Booking> {
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id },
+      data,
+    });
+
+    return this.findOneById(updatedBooking.id);
   }
 
   /**

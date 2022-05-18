@@ -1,11 +1,5 @@
 import { PrismaService } from 'nestjs-prisma';
-import {
-  Injectable,
-  BadRequestException,
-  Scope,
-  Inject,
-  Request,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Scope } from '@nestjs/common';
 import { PasswordService } from 'auth/password.service';
 import { ChangePasswordInput } from './dto/change-password.input';
 import { UpdateUserInput } from './dto/update-user.input';
@@ -17,12 +11,10 @@ import {
   PaginationService,
   PrismaDelegateRejectSettings,
 } from 'common/pagination/pagination.service';
-import { REQUEST } from '@nestjs/core';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService {
   constructor(
-    @Inject(REQUEST) private readonly request: Request,
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
     private readonly paginationService: PaginationService
@@ -54,12 +46,6 @@ export class UsersService {
    * Update user.
    */
   updateUser(userId: string, newUserData: UpdateUserInput) {
-    const ctxUser: UserWithoutRelations = (this.request as any).user;
-
-    if (ctxUser.role !== 'ADMIN' && ctxUser.id !== userId) {
-      throw new BadRequestException('You are not allowed to update this user');
-    }
-
     return this.prisma.user.update({
       data: newUserData,
       where: {
@@ -94,6 +80,18 @@ export class UsersService {
         password: hashedPassword,
       },
       where: { id: userId },
+    });
+  }
+
+  /**
+   * Delete a user.
+   */
+  deleteUser(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+      },
     });
   }
 }

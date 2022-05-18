@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -147,12 +148,12 @@ export class BookingsService {
         where: { booking: { id: bookingId }, participantRole: 'ORGANISER' },
       });
       if (organiser) {
-        throw new UnprocessableEntityException(
+        throw new BadRequestException(
           'Cannot assign organiser to booking before unassigning existing organiser'
         );
       }
     } else if (organisers.length > 1) {
-      throw new UnprocessableEntityException(
+      throw new BadRequestException(
         'Cannot assign more than one organiser to a booking'
       );
     }
@@ -181,7 +182,7 @@ export class BookingsService {
               'Participant(s) already assigned to booking'
             );
           case 'P2003':
-            throw new UnprocessableEntityException('Invalid participant(s)');
+            throw new ConflictException('Invalid participant(s)');
         }
       }
       throw e;

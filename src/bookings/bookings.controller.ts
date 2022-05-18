@@ -11,6 +11,7 @@ import {
   Patch,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -19,7 +20,6 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
-  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { Booking } from './models/booking.model';
 import { CreateBookingInput } from './dto/create-booking.input';
@@ -68,6 +68,7 @@ export class BookingsController {
   @Post('booking')
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiCreatedResponse({ type: Booking })
+  @ApiBadRequestResponse({ description: 'Could not create booking' })
   create(@Body() booking: CreateBookingInput, @Request() req) {
     return this.bookingsService.createBooking(req.user.id, booking);
   }
@@ -85,7 +86,7 @@ export class BookingsController {
     example: 'cl37ynt5m0017s2ec6tmdfqo0',
   })
   @ApiOkResponse({ type: Booking })
-  @ApiNotFoundResponse()
+  @ApiNotFoundResponse({ description: 'Booking not found' })
   async getBooking(@Param('id') id: string) {
     const booking = await this.bookingsService.findOneById(id);
     if (!booking) {
@@ -105,8 +106,9 @@ export class BookingsController {
     example: 'cl37ynt5m0017s2ec6tmdfqo0',
   })
   @ApiOkResponse({ type: Booking })
-  @ApiNotFoundResponse()
-  @ApiUnprocessableEntityResponse()
+  @ApiNotFoundResponse({ description: 'Booking not found' })
+  @ApiConflictResponse({ description: 'Booking update conflict' })
+  @ApiBadRequestResponse({ description: 'Could not update booking' })
   updateBooking(@Param('id') id: string, @Body() booking: UpdateBookingInput) {
     return this.bookingsService.updateBooking(id, booking);
   }
@@ -124,9 +126,9 @@ export class BookingsController {
     example: 'cl37ynt5m0017s2ec6tmdfqo0',
   })
   @ApiCreatedResponse({ type: BookingParticipantsCreatedOutput })
-  @ApiNotFoundResponse()
-  @ApiConflictResponse()
-  @ApiUnprocessableEntityResponse()
+  @ApiNotFoundResponse({ description: 'Booking not found' })
+  @ApiConflictResponse({ description: 'Participants update conflict' })
+  @ApiBadRequestResponse({ description: 'Could not update participants' })
   addParticipant(
     @Param('id') id: string,
     @Body() { participants }: BookingParticipantsInput,
@@ -148,7 +150,8 @@ export class BookingsController {
     example: 'cl37ynt5m0017s2ec6tmdfqo0',
   })
   @ApiOkResponse({ type: Booking })
-  @ApiNotFoundResponse()
+  @ApiNotFoundResponse({ description: 'Booking not found' })
+  @ApiBadRequestResponse({ description: 'Could not delete booking' })
   deleteBooking(@Param('id') id: string) {
     return this.bookingsService.deleteBooking(id);
   }

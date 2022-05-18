@@ -5,6 +5,6 @@ import { JWTAuthGuard } from './auth.guard';
 export const JWTGuard = () =>
   applyDecorators(
     ApiBearerAuth(),
-    ApiUnauthorizedResponse({ description: 'Unauthorised' }),
+    ApiUnauthorizedResponse({ description: 'JWT Unauthorised' }),
     UseGuards(JWTAuthGuard)
   );

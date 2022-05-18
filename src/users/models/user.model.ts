@@ -18,6 +18,9 @@ registerEnumType(Role, {
 @ObjectType()
 export class User extends BaseModel {
   @ApiProperty({ readOnly: true })
+  deletedAt?: Date;
+
+  @ApiProperty({ readOnly: true })
   email: string;
 
   @ApiProperty({ readOnly: true, nullable: true })

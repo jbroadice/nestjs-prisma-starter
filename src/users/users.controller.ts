@@ -1,4 +1,13 @@
-import { Controller, Get, Request, Query, Patch, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  Query,
+  Patch,
+  Body,
+  BadRequestException,
+  Delete,
+} from '@nestjs/common';
 import {
   ApiOperation,
   ApiOkResponse,
@@ -6,12 +15,13 @@ import {
   ApiQuery,
   ApiConflictResponse,
   ApiNotFoundResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { JWTGuard } from 'auth/jwt-guard.decorator';
 import { ApiPaginatedResponse } from 'common/pagination/api-paginated-response.decorator';
 import { UpdateUserInput } from './dto/update-user.input';
 import { UsersFiltersPaginatedDto } from './dto/users-filters.dto';
-import { UserWithoutRelations } from './models/user.model';
+import { User, UserWithoutRelations } from './models/user.model';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -50,9 +60,36 @@ export class UsersController {
   @Patch('user/:id')
   @ApiOperation({ summary: 'Update user' })
   @ApiOkResponse({ type: UserWithoutRelations })
-  @ApiNotFoundResponse()
-  @ApiConflictResponse()
-  updateUser(@Query('id') id: string, @Body() user: UpdateUserInput) {
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiConflictResponse({ description: 'User update conflict' })
+  @ApiBadRequestResponse({ description: 'Could not update user' })
+  updateUser(
+    @Request() req,
+    @Query('id') id: string,
+    @Body() user: UpdateUserInput
+  ) {
+    const ctxUser: User = req.user;
+    if (ctxUser.role !== 'ADMIN' && ctxUser.id !== id) {
+      throw new BadRequestException('You are not allowed to update this user');
+    }
+
     return this.usersService.updateUser(id, user);
+  }
+
+  /**
+   * Delete user.
+   */
+  @Delete('user/:id')
+  @ApiOperation({ summary: 'Delete user' })
+  @ApiOkResponse({ type: UserWithoutRelations })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({ description: 'Not allowed to delete user' })
+  deleteUser(@Request() req, @Query('id') id: string) {
+    const ctxUser: User = req.user;
+    if (ctxUser.role !== 'ADMIN' || ctxUser.id === id) {
+      throw new BadRequestException('You are not allowed to delete this user');
+    }
+
+    return this.usersService.deleteUser(id);
   }
 }
